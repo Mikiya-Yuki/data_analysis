@@ -1,3 +1,8 @@
+# In the field of fiscal and political studies, there exist data that needs to be aggregated on a fiscal year basis. 
+# In this case, we cannot simply subset the units for analysis based solely on the numeric value of the year. 
+# Therefore, this code provides a method for aggregating event data on a fiscal year basis. 
+# This analysis assumes the setting of analyzing units such as political years and fiscal years based on political conventions as potential applications.
+
 # Install necessary packages
 install.packages(c("tidyverse", "readr", "lubridate", "ggplot2", "gridExtra", "pdfTools"))
 
