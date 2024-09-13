@@ -5,7 +5,7 @@
 
 # run: pip3 install PyPDF2 Pillow
 import os
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from PyPDF2 import PdfMerger
 
 def merge_pdfs_and_images_to_pdf(base_directory):
@@ -31,16 +31,24 @@ def merge_pdfs_and_images_to_pdf(base_directory):
 
         # Get all image files in the current directory and convert them to a single PDF
         image_files = [os.path.join(root, file) for file in files if file.lower().endswith(('.png', '.jpg', '.jpeg'))]
-        if image_files:
-            image_files.sort()
-            images = [Image.open(img_file) for img_file in image_files]
-            images_rgb = [img.convert("RGB") if img.mode == "RGBA" else img for img in images]
-            
-            # Temporary PDF filename for the image files
+        images_rgb = []
+
+        for img_file in image_files:
+            try:
+                # Attempt to open the image file
+                img = Image.open(img_file)
+                img_rgb = img.convert("RGB") if img.mode == "RGBA" else img
+                images_rgb.append(img_rgb)
+            except UnidentifiedImageError:
+                print(f"Unidentified image error for file: {img_file}. Skipping.")
+            except Exception as e:
+                print(f"Error processing image file {img_file}: {e}. Skipping.")
+
+        # If there are valid images, create a temporary PDF and append it to the merger
+        if images_rgb:
             temp_pdf_filename = os.path.join(results_dir, "temp_image_pdf.pdf")
             images_rgb[0].save(temp_pdf_filename, save_all=True, append_images=images_rgb[1:])
             merger.append(temp_pdf_filename)
-            os.remove(temp_pdf_filename)
 
         # Append existing PDF files to the merger object
         pdf_files = [os.path.join(root, file) for file in files if file.lower().endswith('.pdf')]
@@ -49,8 +57,11 @@ def merge_pdfs_and_images_to_pdf(base_directory):
 
         # Save the merged PDF
         merger.write(output_filename)
-        merger.close()
+        merger.close()  # Ensure the merger is closed before deleting the temp file
+
+        # Now remove the temporary PDF file
+        if os.path.exists(temp_pdf_filename):
+            os.remove(temp_pdf_filename)
 
 # Run the function to generate the merged PDFs
 merge_pdfs_and_images_to_pdf(os.getcwd())
-
